@@ -258,6 +258,9 @@ function paw(mat, x, y, z, sx = 1, sy = 0.45, sz = 1.15) {
 
 function creatureVisual(id) {
   const g = new THREE.Group();
+  const add = (...objs) => {
+    objs.forEach((o) => g.add(o));
+  };
   if (id === "penguin") {
     const body = new THREE.Mesh(new THREE.SphereGeometry(0.052, 16, 12), mats.black);
     body.scale.set(0.82, 1.2, 0.78);
@@ -326,34 +329,39 @@ function creatureVisual(id) {
     g.add(paw(mats.beige, -0.03, -0.048, 0.018), paw(mats.beige, 0.03, -0.048, 0.018), paw(mats.beige, -0.03, -0.048, -0.016), paw(mats.beige, 0.03, -0.048, -0.016));
     makeEyes(head, 0.008, 0.006, 0.016, 0.65);
   } else if (id === "cactus") {
-    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.034, 0.13, 12), mats.green);
-    const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.055, 8), mats.green);
-    arm.position.set(0.042, 0.022, 0);
-    arm.rotation.z = 1.05;
-    const cap = new THREE.Mesh(new THREE.SphereGeometry(0.014, 8, 8), mats.green);
-    cap.position.set(0.062, 0.042, 0);
+    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.032, 0.12, 12), mats.green);
+    const top = new THREE.Mesh(new THREE.SphereGeometry(0.028, 10, 8), mats.green);
+    top.position.y = 0.06;
+    const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.013, 0.013, 0.05, 8), mats.green);
+    arm.position.set(0.04, 0.018, 0);
+    arm.rotation.z = Math.PI / 2;
+    const up = new THREE.Mesh(new THREE.CylinderGeometry(0.013, 0.013, 0.036, 8), mats.green);
+    up.position.set(0.058, 0.036, 0);
     const arm2 = arm.clone();
-    arm2.position.set(-0.04, 0.0, 0);
-    arm2.rotation.z = -1.12;
-    const cap2 = cap.clone();
-    cap2.position.set(-0.06, 0.02, 0);
-    const flower = new THREE.Mesh(new THREE.SphereGeometry(0.014, 8, 8), mats.pink);
-    flower.position.set(0, 0.072, 0);
-    const shades = new THREE.Mesh(new THREE.BoxGeometry(0.048, 0.012, 0.012), mats.black);
-    shades.position.set(0, 0.038, 0.03);
-    g.add(stem, arm, cap, arm2, cap2, flower, shades);
-    makeEyes(g, 0.012, 0.038, 0.032, 0.8);
+    arm2.position.set(-0.038, -0.004, 0);
+    const up2 = up.clone();
+    up2.position.set(-0.056, 0.014, 0);
+    const flower = new THREE.Mesh(new THREE.SphereGeometry(0.013, 8, 8), mats.pink);
+    flower.position.set(0, 0.084, 0);
+    const shades = new THREE.Mesh(new THREE.BoxGeometry(0.046, 0.011, 0.012), mats.black);
+    shades.position.set(0, 0.034, 0.028);
+    g.add(stem, top, arm, up, arm2, up2, flower, shades);
+    makeEyes(g, 0.012, 0.034, 0.03, 0.8);
   } else if (id === "lizard") {
-    const body = new THREE.Mesh(new THREE.SphereGeometry(0.028, 12, 10), mats.teal);
-    body.scale.set(1.8, 0.7, 0.85);
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.02, 10, 8), mats.teal);
-    head.position.set(0.048, 0.01, 0.01);
-    const tail = new THREE.Mesh(new THREE.ConeGeometry(0.014, 0.08, 8), mats.darkGreen);
+    const curve = new THREE.QuadraticBezierCurve3(
+      new THREE.Vector3(-0.07, 0.0, 0),
+      new THREE.Vector3(0.0, 0.012, 0),
+      new THREE.Vector3(0.055, 0.008, 0.01)
+    );
+    const body = new THREE.Mesh(new THREE.TubeGeometry(curve, 12, 0.012, 8, false), mats.teal);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.016, 10, 8), mats.teal);
+    head.position.set(0.062, 0.012, 0.012);
+    const tail = new THREE.Mesh(new THREE.ConeGeometry(0.01, 0.06, 8), mats.darkGreen);
     tail.rotation.z = Math.PI / 2;
-    tail.position.set(-0.06, 0.0, 0);
+    tail.position.set(-0.09, 0.0, 0);
     g.add(body, head, tail);
-    g.add(paw(mats.teal, 0.02, -0.02, 0.02, 0.9), paw(mats.teal, -0.01, -0.02, 0.02, 0.9), paw(mats.teal, 0.02, -0.02, -0.016, 0.9), paw(mats.teal, -0.01, -0.02, -0.016, 0.9));
-    makeEyes(head, 0.008, 0.006, 0.016, 0.7);
+    g.add(paw(mats.teal, 0.02, -0.014, 0.018, 0.9), paw(mats.teal, -0.02, -0.014, 0.018, 0.9), paw(mats.teal, 0.02, -0.014, -0.014, 0.9), paw(mats.teal, -0.02, -0.014, -0.014, 0.9));
+    makeEyes(head, 0.007, 0.004, 0.012, 0.65);
   } else if (id === "owl") {
     const body = new THREE.Mesh(new THREE.SphereGeometry(0.05, 14, 12), mats.brown);
     body.scale.set(0.92, 1.12, 0.86);
@@ -409,18 +417,18 @@ function creatureVisual(id) {
     g.add(body, chest, head, ear, ear2, inner, inner2, tail, tip);
     makeEyes(head, 0.008, 0.006, 0.02, 0.75);
   } else if (id === "fish") {
-    const body = new THREE.Mesh(new THREE.SphereGeometry(0.042, 14, 10), mats.orange);
-    body.scale.set(1.45, 0.78, 0.68);
-    const tail = new THREE.Mesh(new THREE.ConeGeometry(0.026, 0.048, 6), mats.yellow);
-    tail.rotation.z = Math.PI / 2;
-    tail.position.set(-0.062, 0, 0);
-    const fin = new THREE.Mesh(new THREE.ConeGeometry(0.014, 0.03, 6), mats.yellow);
-    fin.position.set(0.0, 0.034, 0);
-    const side = new THREE.Mesh(new THREE.ConeGeometry(0.01, 0.022, 6), mats.gold);
-    side.rotation.z = 0.9;
-    side.position.set(0.01, -0.006, 0.028);
-    g.add(body, tail, fin, side);
-    makeEyes(g, 0.01, 0.012, 0.03, 0.9);
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.04, 14, 10), mats.orange);
+    body.scale.set(1.55, 0.82, 0.62);
+    const tailA = new THREE.Mesh(new THREE.ConeGeometry(0.016, 0.04, 6), mats.yellow);
+    tailA.position.set(-0.068, 0.014, 0);
+    tailA.rotation.z = 1.9;
+    const tailB = tailA.clone();
+    tailB.position.set(-0.068, -0.014, 0);
+    tailB.rotation.z = 1.25;
+    const fin = new THREE.Mesh(new THREE.ConeGeometry(0.012, 0.028, 6), mats.yellow);
+    fin.position.set(0.0, 0.032, 0);
+    g.add(body, tailA, tailB, fin);
+    makeEyes(g, 0.01, 0.01, 0.026, 0.85);
   } else if (id === "crab") {
     const body = new THREE.Mesh(new THREE.SphereGeometry(0.038, 12, 10), mats.rust);
     body.scale.set(1.4, 0.55, 1.05);
@@ -434,7 +442,12 @@ function creatureVisual(id) {
       g.add(paw(mats.rust, x, -0.02, 0.03, 0.6, 0.35, 1.1));
       g.add(paw(mats.rust, x, -0.02, -0.024, 0.6, 0.35, 1.1));
     }
-    makeEyes(g, 0.014, 0.03, 0.032, 0.8);
+    const stalk = new THREE.Mesh(new THREE.CylinderGeometry(0.003, 0.003, 0.028, 6), mats.rust);
+    const stalk2 = stalk.clone();
+    stalk.position.set(-0.014, 0.028, 0.02);
+    stalk2.position.set(0.014, 0.028, 0.02);
+    g.add(stalk, stalk2);
+    makeEyes(g, 0.014, 0.044, 0.028, 0.7);
   } else if (id === "turtle") {
     const shell = new THREE.Mesh(new THREE.SphereGeometry(0.048, 14, 10), mats.shell);
     shell.scale.set(1.15, 0.7, 1.05);
@@ -451,41 +464,49 @@ function creatureVisual(id) {
     g.add(shell, plate, head, flip, flip2);
     makeEyes(head, 0.007, 0.004, 0.012, 0.6);
   } else if (id === "sock") {
-    const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.022, 12), mats.white);
-    cuff.position.set(-0.02, 0.04, 0);
-    cuff.rotation.z = 0.35;
-    const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.024, 0.08, 12), mats.pink);
-    tube.rotation.z = 0.35;
-    const stripe = new THREE.Mesh(new THREE.CylinderGeometry(0.021, 0.023, 0.018, 12), mats.yellow);
-    stripe.position.set(-0.006, 0.012, 0);
-    stripe.rotation.z = 0.35;
-    const foot = new THREE.Mesh(new THREE.SphereGeometry(0.028, 10, 8), mats.pink);
-    foot.position.set(0.032, -0.038, 0.008);
-    foot.scale.set(1.35, 0.58, 0.92);
-    g.add(cuff, tube, stripe, foot);
-    makeEyes(g, 0.01, 0.018, 0.03, 0.75);
+    const cuff = new THREE.Mesh(new THREE.TorusGeometry(0.02, 0.008, 8, 16), mats.white);
+    cuff.rotation.x = Math.PI / 2;
+    cuff.position.set(0, 0.046, 0);
+    const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.022, 0.08, 12), mats.pink);
+    tube.position.y = 0.006;
+    const stripe = new THREE.Mesh(new THREE.CylinderGeometry(0.021, 0.022, 0.016, 12), mats.yellow);
+    stripe.position.y = 0.01;
+    const foot = new THREE.Mesh(new THREE.SphereGeometry(0.024, 10, 8), mats.pink);
+    foot.position.set(0.028, -0.032, 0.01);
+    foot.scale.set(1.45, 0.55, 0.95);
+    const toe = new THREE.Mesh(new THREE.SphereGeometry(0.016, 8, 8), mats.pink);
+    toe.position.set(0.046, -0.034, 0.012);
+    g.add(cuff, tube, stripe, foot, toe);
+    makeEyes(g, 0.01, 0.012, 0.022, 0.7);
   } else if (id === "duck") {
-    const body = new THREE.Mesh(new THREE.SphereGeometry(0.044, 12, 10), mats.yellow);
-    body.scale.set(1.2, 0.82, 0.92);
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.042, 12, 10), mats.yellow);
+    body.scale.set(1.25, 0.85, 0.95);
+    body.position.y = -0.004;
     const wing = new THREE.Mesh(new THREE.SphereGeometry(0.02, 10, 8), mats.gold);
-    wing.scale.set(0.7, 0.45, 1.1);
-    wing.position.set(-0.01, 0.006, 0.038);
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.026, 10, 8), mats.yellow);
-    head.position.set(0.032, 0.038, 0.018);
-    const beak = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.01, 0.016), mats.orange);
-    beak.position.set(0.05, 0.03, 0.03);
-    g.add(body, wing, head, beak, paw(mats.orange, -0.012, -0.036, 0.016), paw(mats.orange, 0.016, -0.036, 0.016));
-    makeEyes(g, 0.01, 0.046, 0.04, 0.8);
+    wing.scale.set(0.65, 0.4, 1.15);
+    wing.position.set(0.0, 0.004, 0.04);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.024, 10, 8), mats.yellow);
+    head.position.set(0.036, 0.04, 0.016);
+    const beak = new THREE.Mesh(new THREE.BoxGeometry(0.024, 0.008, 0.014), mats.orange);
+    beak.position.set(0.056, 0.032, 0.028);
+    g.add(body, wing, head, beak, paw(mats.orange, -0.01, -0.038, 0.018), paw(mats.orange, 0.02, -0.038, 0.018));
+    makeEyes(head, 0.008, 0.006, 0.018, 0.7);
   } else if (id === "banana") {
-    const fruit = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.022, 0.11, 12), mats.gold);
-    fruit.rotation.z = 0.55;
-    const tip = new THREE.Mesh(new THREE.SphereGeometry(0.016, 10, 8), mats.gold);
-    tip.position.set(0.04, -0.038, 0);
-    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.008, 0.024, 8), mats.brown);
-    stem.position.set(-0.038, 0.052, 0);
-    stem.rotation.z = 0.4;
-    g.add(fruit, tip, stem);
-    makeEyes(g, 0.01, 0.01, 0.02, 0.7);
+    const curve = new THREE.QuadraticBezierCurve3(
+      new THREE.Vector3(-0.028, 0.055, 0),
+      new THREE.Vector3(0.01, 0.006, 0),
+      new THREE.Vector3(0.042, -0.052, 0)
+    );
+    const fruit = new THREE.Mesh(new THREE.TubeGeometry(curve, 18, 0.015, 10, false), mats.gold);
+    const tip = new THREE.Mesh(new THREE.SphereGeometry(0.014, 10, 8), mats.gold);
+    tip.position.copy(curve.getPoint(1));
+    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.007, 0.02, 8), mats.brown);
+    const start = curve.getPoint(0);
+    stem.position.set(start.x, start.y + 0.014, 0);
+    const face = new THREE.Group();
+    face.position.set(0.008, 0.008, 0.016);
+    g.add(fruit, tip, stem, face);
+    makeEyes(face, 0.008, 0, 0, 0.6);
   }
   g.traverse((n) => {
     if (n.isMesh) addShadowless(n);
@@ -674,31 +695,57 @@ function drawDoodle(ctx, id) {
   ctx.restore();
 }
 
+function paintCardFace(ctx, def, photo) {
+  ctx.fillStyle = "#f4efe4";
+  ctx.fillRect(0, 0, 256, 320);
+  ctx.fillStyle = "#efe6d4";
+  ctx.fillRect(16, 16, 224, 188);
+  ctx.strokeStyle = "#d7c4a2";
+  ctx.strokeRect(16, 16, 224, 188);
+  if (photo) {
+    const r = Math.max(224 / photo.width, 188 / photo.height);
+    const w = photo.width * r;
+    const h = photo.height * r;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(16, 16, 224, 188);
+    ctx.clip();
+    ctx.drawImage(photo, 16 + (224 - w) / 2, 16 + (188 - h) / 2, w, h);
+    ctx.restore();
+  } else {
+    drawDoodle(ctx, def.id);
+    ctx.fillStyle = "rgba(27,42,36,0.72)";
+    ctx.font = "600 12px Trebuchet MS, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("add  portraits/" + def.id + ".png", 128, 192);
+  }
+  ctx.fillStyle = "#1b2a24";
+  ctx.font = "700 24px Trebuchet MS, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(def.title.toUpperCase(), 128, 242);
+  ctx.fillStyle = "#5a6b4a";
+  ctx.font = "600 15px Trebuchet MS, sans-serif";
+  ctx.fillText(FUNNY_SUB[def.id] || "Table's guest", 128, 268);
+}
+
 function makeFunnyCard(def) {
   const c = document.createElement("canvas");
   c.width = 256;
   c.height = 320;
   const ctx = c.getContext("2d");
-  ctx.fillStyle = "#f4efe4";
-  ctx.fillRect(0, 0, 256, 320);
-  ctx.fillStyle = "#fff8ee";
-  ctx.fillRect(14, 14, 228, 198);
-  ctx.strokeStyle = "#d7c4a2";
-  ctx.strokeRect(14, 14, 228, 198);
-  drawDoodle(ctx, def.id);
-  ctx.fillStyle = "#1b2a24";
-  ctx.font = "700 26px Trebuchet MS, sans-serif";
-  ctx.textAlign = "center";
-  ctx.fillText(def.title.toUpperCase(), 128, 246);
-  ctx.fillStyle = "#5a6b4a";
-  ctx.font = "600 16px Trebuchet MS, sans-serif";
-  ctx.fillText(FUNNY_SUB[def.id] || "Table's guest", 128, 274);
+  paintCardFace(ctx, def, null);
   const tex = new THREE.CanvasTexture(c);
+  const img = new Image();
+  img.onload = () => {
+    paintCardFace(ctx, def, img);
+    tex.needsUpdate = true;
+  };
+  img.src = "./portraits/" + def.id + ".png";
   const mesh = new THREE.Mesh(
-    new THREE.PlaneGeometry(0.15, 0.188),
+    new THREE.PlaneGeometry(0.11, 0.138),
     new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false })
   );
-  mesh.position.set(0, 0.17, 0.02);
+  mesh.position.set(0, 0.145, 0.02);
   mesh.userData.isCard = true;
   return mesh;
 }
