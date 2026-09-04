@@ -59,6 +59,42 @@ const CREATURES = [
     wrong: ["Frog puts on a rain hat and stares.", "No pond. No vibe."],
   },
   {
+    id: "fox",
+    biome: "forest",
+    title: "Fox",
+    correct: ["Fox vanishes into the ferns, dramatically.", "Forest gossips increase by one."],
+    wrong: ["Too much sky. Not enough trees.", "Fox would like a refund."],
+  },
+  {
+    id: "seal",
+    biome: "arctic",
+    title: "Seal",
+    correct: ["Seal applauds with flippers.", "Snoot: refrigerated."],
+    wrong: ["This is not a slip-and-slide.", "Seal looks for a colder couch."],
+  },
+  {
+    id: "lizard",
+    biome: "desert",
+    title: "Lizard",
+    correct: ["Lizard claims the warm rock.", "Sunbathing professional."],
+    wrong: ["Too soggy. Scales dislike this.", "Lizard files a heat complaint."],
+  },
+  {
+    id: "turtle",
+    biome: "ocean",
+    title: "Turtle",
+    correct: ["Turtle is in no hurry. This water is fine.", "Shell: seaworthy."],
+    wrong: ["The turtle politely declines dry land.", "This is not the current."],
+  },
+  {
+    id: "banana",
+    biome: "junk",
+    title: "Banana",
+    junk: true,
+    correct: ["Snack drawer. Correct-ish.", "Banana is not a mammal. Table knew that."],
+    wrong: ["Wildlife does not accept fruit.", "The biome is not a lunchbox."],
+  },
+  {
     id: "fish",
     biome: "ocean",
     title: "Fish",
@@ -157,6 +193,11 @@ const mats = {
   yellow: new THREE.MeshStandardMaterial({ color: 0xf0c44a, roughness: 0.5 }),
   gray: new THREE.MeshStandardMaterial({ color: 0x9aa4ad, roughness: 0.6 }),
   pink: new THREE.MeshStandardMaterial({ color: 0xe7a0b8, roughness: 0.55 }),
+  teal: new THREE.MeshStandardMaterial({ color: 0x3aa87a, roughness: 0.55 }),
+  navy: new THREE.MeshStandardMaterial({ color: 0x3a4a6a, roughness: 0.55 }),
+  cream: new THREE.MeshStandardMaterial({ color: 0xf3e6c8, roughness: 0.6 }),
+  gold: new THREE.MeshStandardMaterial({ color: 0xe8c84a, roughness: 0.45 }),
+  shell: new THREE.MeshStandardMaterial({ color: 0x5a8f4a, roughness: 0.7 }),
   room: new THREE.MeshStandardMaterial({ color: 0xe8d9b8, roughness: 1 }),
   floor: new THREE.MeshStandardMaterial({ color: 0x6d8a5a, roughness: 1 }),
 };
@@ -187,125 +228,243 @@ function makeEyes(group, x = 0.018, y = 0.03, z = 0.045, scale = 1) {
   group.add(white, white2, p1, p2);
 }
 
+function paw(mat, x, y, z, sx = 1, sy = 0.45, sz = 1.15) {
+  const m = new THREE.Mesh(new THREE.SphereGeometry(0.012, 8, 6), mat);
+  m.scale.set(sx, sy, sz);
+  m.position.set(x, y, z);
+  return m;
+}
+
 function creatureVisual(id) {
   const g = new THREE.Group();
   if (id === "penguin") {
-    const body = new THREE.Mesh(new THREE.SphereGeometry(0.055, 16, 12), mats.black);
-    body.scale.set(0.85, 1.15, 0.8);
-    const belly = new THREE.Mesh(new THREE.SphereGeometry(0.04, 12, 10), mats.white);
-    belly.position.set(0, -0.005, 0.028);
-    belly.scale.set(0.8, 1, 0.5);
-    const beak = new THREE.Mesh(new THREE.ConeGeometry(0.012, 0.03, 8), mats.orange);
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.052, 16, 12), mats.black);
+    body.scale.set(0.82, 1.2, 0.78);
+    const belly = new THREE.Mesh(new THREE.SphereGeometry(0.038, 12, 10), mats.white);
+    belly.position.set(0, -0.004, 0.03);
+    belly.scale.set(0.78, 1.05, 0.48);
+    const flip = new THREE.Mesh(new THREE.SphereGeometry(0.02, 10, 8), mats.black);
+    flip.scale.set(0.35, 1.1, 0.7);
+    flip.position.set(-0.048, 0.0, 0.01);
+    const flip2 = flip.clone();
+    flip2.position.x = 0.048;
+    const beak = new THREE.Mesh(new THREE.ConeGeometry(0.011, 0.028, 8), mats.orange);
     beak.rotation.x = Math.PI / 2;
-    beak.position.set(0, 0.02, 0.055);
-    g.add(body, belly, beak);
-    makeEyes(g, 0.016, 0.028, 0.048);
+    beak.position.set(0, 0.028, 0.055);
+    g.add(body, belly, flip, flip2, beak, paw(mats.orange, -0.018, -0.058, 0.02), paw(mats.orange, 0.018, -0.058, 0.02));
+    makeEyes(g, 0.015, 0.034, 0.05, 0.95);
   } else if (id === "bear") {
-    const body = new THREE.Mesh(new THREE.SphereGeometry(0.07, 16, 12), mats.white);
-    body.scale.set(1.05, 0.85, 0.9);
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.038, 12, 10), mats.white);
-    head.position.set(0, 0.045, 0.035);
-    const ear = new THREE.Mesh(new THREE.SphereGeometry(0.012, 8, 8), mats.white);
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.062, 16, 12), mats.white);
+    body.scale.set(1.08, 0.88, 0.92);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.036, 12, 10), mats.white);
+    head.position.set(0, 0.05, 0.038);
+    const snout = new THREE.Mesh(new THREE.SphereGeometry(0.016, 10, 8), mats.cream);
+    snout.position.set(0, 0.042, 0.068);
+    const nose = new THREE.Mesh(new THREE.SphereGeometry(0.006, 8, 6), mats.black);
+    nose.position.set(0, 0.044, 0.082);
+    const ear = new THREE.Mesh(new THREE.SphereGeometry(0.013, 8, 8), mats.white);
     const ear2 = ear.clone();
-    ear.position.set(-0.025, 0.075, 0.03);
-    ear2.position.set(0.025, 0.075, 0.03);
-    g.add(body, head, ear, ear2);
-    makeEyes(g, 0.014, 0.05, 0.068, 0.9);
+    ear.position.set(-0.024, 0.078, 0.03);
+    ear2.position.set(0.024, 0.078, 0.03);
+    g.add(body, head, snout, nose, ear, ear2, paw(mats.cream, -0.03, -0.052, 0.03, 1.2), paw(mats.cream, 0.03, -0.052, 0.03, 1.2));
+    makeEyes(g, 0.013, 0.056, 0.07, 0.85);
+  } else if (id === "seal") {
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.05, 14, 12), mats.gray);
+    body.scale.set(1.45, 0.72, 0.8);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.028, 12, 10), mats.gray);
+    head.position.set(0.055, 0.02, 0.02);
+    const nose = new THREE.Mesh(new THREE.SphereGeometry(0.008, 8, 6), mats.black);
+    nose.position.set(0.078, 0.018, 0.032);
+    const flip = new THREE.Mesh(new THREE.SphereGeometry(0.018, 10, 8), mats.navy);
+    flip.scale.set(1.4, 0.35, 0.7);
+    flip.position.set(0.01, -0.02, 0.04);
+    const flip2 = flip.clone();
+    flip2.position.set(0.01, -0.02, -0.03);
+    const tail = new THREE.Mesh(new THREE.SphereGeometry(0.016, 8, 8), mats.gray);
+    tail.position.set(-0.07, -0.01, 0);
+    tail.scale.set(1.2, 0.5, 1.4);
+    g.add(body, head, nose, flip, flip2, tail);
+    makeEyes(head, 0.01, 0.008, 0.02, 0.75);
   } else if (id === "camel") {
-    const body = new THREE.Mesh(new THREE.SphereGeometry(0.05, 14, 10), mats.beige);
-    body.scale.set(1.3, 0.8, 0.8);
-    const hump = new THREE.Mesh(new THREE.SphereGeometry(0.028, 10, 8), mats.beige);
-    hump.position.set(-0.01, 0.045, 0);
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.048, 14, 10), mats.beige);
+    body.scale.set(1.35, 0.78, 0.78);
+    const hump = new THREE.Mesh(new THREE.SphereGeometry(0.026, 10, 8), mats.beige);
+    hump.position.set(-0.012, 0.048, 0);
     const hump2 = hump.clone();
-    hump2.position.set(0.03, 0.04, 0);
-    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.016, 0.07, 8), mats.beige);
-    neck.position.set(0.055, 0.03, 0.01);
-    neck.rotation.z = -0.6;
+    hump2.position.set(0.028, 0.044, 0);
+    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.015, 0.072, 8), mats.beige);
+    neck.position.set(0.058, 0.032, 0.01);
+    neck.rotation.z = -0.55;
     const head = new THREE.Mesh(new THREE.SphereGeometry(0.02, 10, 8), mats.beige);
-    head.position.set(0.08, 0.06, 0.02);
-    g.add(body, hump, hump2, neck, head);
-    makeEyes(head, 0.008, 0.006, 0.016, 0.7);
+    head.position.set(0.086, 0.062, 0.02);
+    const ear = new THREE.Mesh(new THREE.ConeGeometry(0.007, 0.018, 6), mats.beige);
+    ear.position.set(0.078, 0.08, 0.016);
+    const ear2 = ear.clone();
+    ear2.position.set(0.094, 0.08, 0.016);
+    g.add(body, hump, hump2, neck, head, ear, ear2);
+    g.add(paw(mats.beige, -0.03, -0.048, 0.018), paw(mats.beige, 0.03, -0.048, 0.018), paw(mats.beige, -0.03, -0.048, -0.016), paw(mats.beige, 0.03, -0.048, -0.016));
+    makeEyes(head, 0.008, 0.006, 0.016, 0.65);
   } else if (id === "cactus") {
-    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.032, 0.12, 10), mats.green);
-    const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.06, 8), mats.green);
-    arm.position.set(0.04, 0.02, 0);
-    arm.rotation.z = 1.1;
+    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.034, 0.13, 12), mats.green);
+    const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.055, 8), mats.green);
+    arm.position.set(0.042, 0.022, 0);
+    arm.rotation.z = 1.05;
+    const cap = new THREE.Mesh(new THREE.SphereGeometry(0.014, 8, 8), mats.green);
+    cap.position.set(0.062, 0.042, 0);
     const arm2 = arm.clone();
-    arm2.position.set(-0.038, 0.0, 0);
-    arm2.rotation.z = -1.15;
-    const shades = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.012, 0.012), mats.black);
-    shades.position.set(0, 0.04, 0.026);
-    g.add(stem, arm, arm2, shades);
-    makeEyes(g, 0.012, 0.04, 0.03, 0.8);
+    arm2.position.set(-0.04, 0.0, 0);
+    arm2.rotation.z = -1.12;
+    const cap2 = cap.clone();
+    cap2.position.set(-0.06, 0.02, 0);
+    const flower = new THREE.Mesh(new THREE.SphereGeometry(0.014, 8, 8), mats.pink);
+    flower.position.set(0, 0.072, 0);
+    const shades = new THREE.Mesh(new THREE.BoxGeometry(0.048, 0.012, 0.012), mats.black);
+    shades.position.set(0, 0.038, 0.03);
+    g.add(stem, arm, cap, arm2, cap2, flower, shades);
+    makeEyes(g, 0.012, 0.038, 0.032, 0.8);
+  } else if (id === "lizard") {
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.028, 12, 10), mats.teal);
+    body.scale.set(1.8, 0.7, 0.85);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.02, 10, 8), mats.teal);
+    head.position.set(0.048, 0.01, 0.01);
+    const tail = new THREE.Mesh(new THREE.ConeGeometry(0.014, 0.08, 8), mats.darkGreen);
+    tail.rotation.z = Math.PI / 2;
+    tail.position.set(-0.06, 0.0, 0);
+    g.add(body, head, tail);
+    g.add(paw(mats.teal, 0.02, -0.02, 0.02, 0.9), paw(mats.teal, -0.01, -0.02, 0.02, 0.9), paw(mats.teal, 0.02, -0.02, -0.016, 0.9), paw(mats.teal, -0.01, -0.02, -0.016, 0.9));
+    makeEyes(head, 0.008, 0.006, 0.016, 0.7);
   } else if (id === "owl") {
     const body = new THREE.Mesh(new THREE.SphereGeometry(0.05, 14, 12), mats.brown);
-    body.scale.set(0.9, 1.1, 0.85);
-    const belly = new THREE.Mesh(new THREE.SphereGeometry(0.03, 10, 8), mats.beige);
-    belly.position.set(0, -0.01, 0.03);
-    const tuft = new THREE.Mesh(new THREE.ConeGeometry(0.012, 0.03, 6), mats.brown);
+    body.scale.set(0.92, 1.12, 0.86);
+    const belly = new THREE.Mesh(new THREE.SphereGeometry(0.03, 10, 8), mats.cream);
+    belly.position.set(0, -0.008, 0.032);
+    const wing = new THREE.Mesh(new THREE.SphereGeometry(0.022, 10, 8), mats.brown);
+    wing.scale.set(0.45, 1.1, 0.7);
+    wing.position.set(-0.042, 0.0, 0.0);
+    const wing2 = wing.clone();
+    wing2.position.x = 0.042;
+    const tuft = new THREE.Mesh(new THREE.ConeGeometry(0.011, 0.028, 6), mats.brown);
     const tuft2 = tuft.clone();
-    tuft.position.set(-0.022, 0.06, 0);
-    tuft2.position.set(0.022, 0.06, 0);
-    g.add(body, belly, tuft, tuft2);
-    makeEyes(g, 0.016, 0.025, 0.045, 1.15);
+    tuft.position.set(-0.02, 0.062, 0.01);
+    tuft2.position.set(0.02, 0.062, 0.01);
+    const beak = new THREE.Mesh(new THREE.ConeGeometry(0.008, 0.016, 6), mats.orange);
+    beak.rotation.x = Math.PI / 2;
+    beak.position.set(0, 0.012, 0.052);
+    g.add(body, belly, wing, wing2, tuft, tuft2, beak);
+    makeEyes(g, 0.016, 0.024, 0.046, 1.2);
   } else if (id === "frog") {
-    const body = new THREE.Mesh(new THREE.SphereGeometry(0.048, 14, 10), mats.green);
-    body.scale.set(1.15, 0.75, 1);
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.046, 14, 10), mats.green);
+    body.scale.set(1.18, 0.72, 1.05);
     const cheek = new THREE.Mesh(new THREE.SphereGeometry(0.016, 8, 8), mats.green);
     const cheek2 = cheek.clone();
-    cheek.position.set(-0.03, 0.028, 0.02);
-    cheek2.position.set(0.03, 0.028, 0.02);
-    g.add(body, cheek, cheek2);
-    makeEyes(g, 0.016, 0.032, 0.04, 1.1);
+    cheek.position.set(-0.03, 0.03, 0.02);
+    cheek2.position.set(0.03, 0.03, 0.02);
+    const belly = new THREE.Mesh(new THREE.SphereGeometry(0.024, 10, 8), mats.cream);
+    belly.position.set(0, -0.008, 0.028);
+    belly.scale.set(1.1, 0.7, 0.5);
+    g.add(body, cheek, cheek2, belly);
+    g.add(paw(mats.green, -0.028, -0.03, 0.028, 1.3, 0.4, 1.4), paw(mats.green, 0.028, -0.03, 0.028, 1.3, 0.4, 1.4));
+    makeEyes(g, 0.016, 0.034, 0.042, 1.15);
   } else if (id === "fox") {
-    const body = new THREE.Mesh(new THREE.SphereGeometry(0.045, 14, 10), mats.orange);
-    body.scale.set(1.25, 0.75, 0.8);
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.028, 12, 10), mats.orange);
-    head.position.set(0.04, 0.03, 0.02);
-    const ear = new THREE.Mesh(new THREE.ConeGeometry(0.012, 0.03, 6), mats.orange);
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.042, 14, 10), mats.orange);
+    body.scale.set(1.3, 0.78, 0.82);
+    const chest = new THREE.Mesh(new THREE.SphereGeometry(0.02, 10, 8), mats.white);
+    chest.position.set(0.02, 0.0, 0.028);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.026, 12, 10), mats.orange);
+    head.position.set(0.048, 0.032, 0.02);
+    const ear = new THREE.Mesh(new THREE.ConeGeometry(0.011, 0.028, 6), mats.orange);
     const ear2 = ear.clone();
-    ear.position.set(0.028, 0.058, 0.015);
-    ear2.position.set(0.052, 0.058, 0.015);
+    ear.position.set(0.036, 0.058, 0.014);
+    ear2.position.set(0.06, 0.058, 0.014);
+    const inner = new THREE.Mesh(new THREE.ConeGeometry(0.006, 0.016, 6), mats.pink);
+    inner.position.set(0.036, 0.054, 0.02);
+    const inner2 = inner.clone();
+    inner2.position.set(0.06, 0.054, 0.02);
     const tail = new THREE.Mesh(new THREE.SphereGeometry(0.02, 10, 8), mats.orange);
-    tail.position.set(-0.06, 0.01, -0.01);
-    tail.scale.set(1.6, 0.7, 0.7);
-    g.add(body, head, ear, ear2, tail);
-    makeEyes(g, 0.01, 0.035, 0.048, 0.8);
+    tail.position.set(-0.062, 0.012, -0.01);
+    tail.scale.set(1.7, 0.7, 0.7);
+    const tip = new THREE.Mesh(new THREE.SphereGeometry(0.012, 8, 8), mats.white);
+    tip.position.set(-0.088, 0.016, -0.012);
+    g.add(body, chest, head, ear, ear2, inner, inner2, tail, tip);
+    makeEyes(head, 0.008, 0.006, 0.02, 0.75);
   } else if (id === "fish") {
-    const body = new THREE.Mesh(new THREE.SphereGeometry(0.045, 14, 10), mats.orange);
-    body.scale.set(1.4, 0.75, 0.7);
-    const tail = new THREE.Mesh(new THREE.ConeGeometry(0.028, 0.05, 6), mats.yellow);
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.042, 14, 10), mats.orange);
+    body.scale.set(1.45, 0.78, 0.68);
+    const tail = new THREE.Mesh(new THREE.ConeGeometry(0.026, 0.048, 6), mats.yellow);
     tail.rotation.z = Math.PI / 2;
-    tail.position.set(-0.06, 0, 0);
-    g.add(body, tail);
-    makeEyes(g, 0.01, 0.01, 0.03, 0.9);
+    tail.position.set(-0.062, 0, 0);
+    const fin = new THREE.Mesh(new THREE.ConeGeometry(0.014, 0.03, 6), mats.yellow);
+    fin.position.set(0.0, 0.034, 0);
+    const side = new THREE.Mesh(new THREE.ConeGeometry(0.01, 0.022, 6), mats.gold);
+    side.rotation.z = 0.9;
+    side.position.set(0.01, -0.006, 0.028);
+    g.add(body, tail, fin, side);
+    makeEyes(g, 0.01, 0.012, 0.03, 0.9);
   } else if (id === "crab") {
-    const body = new THREE.Mesh(new THREE.SphereGeometry(0.04, 12, 10), mats.rust);
-    body.scale.set(1.3, 0.55, 1);
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.038, 12, 10), mats.rust);
+    body.scale.set(1.4, 0.55, 1.05);
     const claw = new THREE.Mesh(new THREE.SphereGeometry(0.016, 8, 8), mats.rust);
+    claw.scale.set(1.3, 0.7, 0.9);
     const claw2 = claw.clone();
-    claw.position.set(-0.055, 0.01, 0.02);
-    claw2.position.set(0.055, 0.01, 0.02);
+    claw.position.set(-0.058, 0.012, 0.022);
+    claw2.position.set(0.058, 0.012, 0.022);
     g.add(body, claw, claw2);
-    makeEyes(g, 0.014, 0.028, 0.03, 0.85);
+    for (const x of [-0.03, 0.0, 0.03]) {
+      g.add(paw(mats.rust, x, -0.02, 0.03, 0.6, 0.35, 1.1));
+      g.add(paw(mats.rust, x, -0.02, -0.024, 0.6, 0.35, 1.1));
+    }
+    makeEyes(g, 0.014, 0.03, 0.032, 0.8);
+  } else if (id === "turtle") {
+    const shell = new THREE.Mesh(new THREE.SphereGeometry(0.048, 14, 10), mats.shell);
+    shell.scale.set(1.15, 0.7, 1.05);
+    const plate = new THREE.Mesh(new THREE.SphereGeometry(0.03, 10, 8), mats.darkGreen);
+    plate.position.set(0, 0.018, 0);
+    plate.scale.set(1.1, 0.4, 1.0);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.016, 10, 8), mats.teal);
+    head.position.set(0.055, 0.008, 0.016);
+    const flip = new THREE.Mesh(new THREE.SphereGeometry(0.014, 8, 8), mats.teal);
+    flip.scale.set(1.5, 0.35, 0.7);
+    const flip2 = flip.clone();
+    flip.position.set(0.02, -0.012, 0.04);
+    flip2.position.set(0.02, -0.012, -0.03);
+    g.add(shell, plate, head, flip, flip2);
+    makeEyes(head, 0.007, 0.004, 0.012, 0.6);
   } else if (id === "sock") {
-    const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.026, 0.09, 10), mats.pink);
-    tube.rotation.z = 0.4;
+    const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.022, 12), mats.white);
+    cuff.position.set(-0.02, 0.04, 0);
+    cuff.rotation.z = 0.35;
+    const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.024, 0.08, 12), mats.pink);
+    tube.rotation.z = 0.35;
+    const stripe = new THREE.Mesh(new THREE.CylinderGeometry(0.021, 0.023, 0.018, 12), mats.yellow);
+    stripe.position.set(-0.006, 0.012, 0);
+    stripe.rotation.z = 0.35;
     const foot = new THREE.Mesh(new THREE.SphereGeometry(0.028, 10, 8), mats.pink);
-    foot.position.set(0.03, -0.04, 0.01);
-    foot.scale.set(1.3, 0.6, 0.9);
-    g.add(tube, foot);
-    makeEyes(g, 0.01, 0.02, 0.03, 0.75);
+    foot.position.set(0.032, -0.038, 0.008);
+    foot.scale.set(1.35, 0.58, 0.92);
+    g.add(cuff, tube, stripe, foot);
+    makeEyes(g, 0.01, 0.018, 0.03, 0.75);
   } else if (id === "duck") {
-    const body = new THREE.Mesh(new THREE.SphereGeometry(0.045, 12, 10), mats.yellow);
-    body.scale.set(1.15, 0.8, 0.9);
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.044, 12, 10), mats.yellow);
+    body.scale.set(1.2, 0.82, 0.92);
+    const wing = new THREE.Mesh(new THREE.SphereGeometry(0.02, 10, 8), mats.gold);
+    wing.scale.set(0.7, 0.45, 1.1);
+    wing.position.set(-0.01, 0.006, 0.038);
     const head = new THREE.Mesh(new THREE.SphereGeometry(0.026, 10, 8), mats.yellow);
-    head.position.set(0.03, 0.035, 0.02);
-    const beak = new THREE.Mesh(new THREE.ConeGeometry(0.01, 0.024, 8), mats.orange);
-    beak.rotation.x = Math.PI / 2;
-    beak.position.set(0.04, 0.03, 0.04);
-    g.add(body, head, beak);
-    makeEyes(g, 0.01, 0.04, 0.042, 0.8);
+    head.position.set(0.032, 0.038, 0.018);
+    const beak = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.01, 0.016), mats.orange);
+    beak.position.set(0.05, 0.03, 0.03);
+    g.add(body, wing, head, beak, paw(mats.orange, -0.012, -0.036, 0.016), paw(mats.orange, 0.016, -0.036, 0.016));
+    makeEyes(g, 0.01, 0.046, 0.04, 0.8);
+  } else if (id === "banana") {
+    const fruit = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.022, 0.11, 12), mats.gold);
+    fruit.rotation.z = 0.55;
+    const tip = new THREE.Mesh(new THREE.SphereGeometry(0.016, 10, 8), mats.gold);
+    tip.position.set(0.04, -0.038, 0);
+    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.008, 0.024, 8), mats.brown);
+    stem.position.set(-0.038, 0.052, 0);
+    stem.rotation.z = 0.4;
+    g.add(fruit, tip, stem);
+    makeEyes(g, 0.01, 0.01, 0.02, 0.7);
   }
   g.traverse((n) => {
     if (n.isMesh) addShadowless(n);
@@ -919,7 +1078,7 @@ function updateCreatures(dt, t) {
 
     data.age += dt;
     const id = data.def.id;
-    const speed = id === "crab" || id === "fox" || id === "fish" ? 0.16 : id === "bear" || id === "cactus" || id === "camel" ? 0.07 : 0.11;
+    const speed = id === "crab" || id === "fox" || id === "fish" || id === "lizard" ? 0.16 : id === "bear" || id === "cactus" || id === "camel" || id === "turtle" || id === "banana" ? 0.07 : 0.11;
 
     if (data.age > 7 && !data.fussed) {
       data.fussed = true;
@@ -967,7 +1126,8 @@ function updateCreatures(dt, t) {
     }
 
     if (id === "crab") c.position.x += Math.sin(t * 6) * dt * 0.04;
-    if (id === "fish") c.rotation.x = Math.sin(t * 8) * 0.15;
+    if (id === "lizard") c.position.x += Math.sin(t * 5) * dt * 0.03;
+    if (id === "fish" || id === "seal") c.rotation.x = Math.sin(t * 8) * 0.15;
     else c.rotation.x += (0 - c.rotation.x) * dt * 5;
 
     const hop = data.ai === "fuss" ? 0.03 : 0.012;
