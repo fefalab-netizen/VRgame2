@@ -717,7 +717,7 @@ function paintCardFace(ctx, def, photo) {
     ctx.fillStyle = "rgba(27,42,36,0.72)";
     ctx.font = "600 12px Trebuchet MS, sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText("add  portraits/" + def.id + ".png", 128, 192);
+    ctx.fillText("add  portraits/" + def.id + ".jpg", 128, 192);
   }
   ctx.fillStyle = "#1b2a24";
   ctx.font = "700 24px Trebuchet MS, sans-serif";
@@ -740,7 +740,7 @@ function makeFunnyCard(def) {
     paintCardFace(ctx, def, img);
     tex.needsUpdate = true;
   };
-  img.src = "./portraits/" + def.id + ".png";
+  img.src = "./portraits/" + def.id + ".jpg";
   const mesh = new THREE.Mesh(
     new THREE.PlaneGeometry(0.11, 0.138),
     new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false })
