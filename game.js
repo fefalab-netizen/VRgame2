@@ -3,8 +3,16 @@ import { XRControllerModelFactory } from "three/addons/webxr/XRControllerModelFa
 
 const TABLE_Y = 0.92;
 const TABLE_Z = -0.72;
-const GRAB_RADIUS = 0.16;
-const SNAP_RADIUS = 0.2;
+const GRAB_RADIUS = 0.22;
+const SNAP_XZ = 0.3;
+const SNAP_Y_MIN = -0.4;
+const SNAP_Y_MAX = 0.65;
+
+const SPAWN_SLOTS = [
+  new THREE.Vector3(-0.18, TABLE_Y + 0.12, TABLE_Z + 0.18),
+  new THREE.Vector3(0.18, TABLE_Y + 0.12, TABLE_Z + 0.18),
+  new THREE.Vector3(0.0, TABLE_Y + 0.12, TABLE_Z + 0.26),
+];
 
 const CREATURES = [
   {
@@ -97,6 +105,11 @@ const TABLE_LINES = {
     "The hatch is thinking.",
     "Ecosystem loading... loading... still loading.",
   ],
+  fuss: [
+    "This one is tapping a foot. Metaphorically.",
+    "It keeps looking at its real home.",
+    "Someone is becoming a little dramatic.",
+  ],
 };
 
 const state = {
@@ -110,8 +123,8 @@ const state = {
   line: "I am Table. Put things where they live.",
   lineUntil: 0,
   nextSpawn: 1.2,
-  spawnGap: 4.2,
-  maxLive: 2,
+  awaitingSpawn: true,
+  maxLive: 1,
   sessionMin: 0,
 };
 
@@ -481,8 +494,20 @@ function buildScoreboard() {
   paintScore();
 }
 
+function freeSpawnPos() {
+  for (const slot of SPAWN_SLOTS) {
+    let busy = false;
+    for (const c of live) {
+      if (!c.parent || c.userData.heldBy || c.userData.done || c.userData.returning) continue;
+      if (c.position.distanceTo(slot) < 0.14) busy = true;
+    }
+    if (!busy) return slot.clone();
+  }
+  return SPAWN_SLOTS[0].clone();
+}
+
 function spawnCreature(prefId) {
-  const living = live.filter((c) => c.parent).length;
+  const living = live.filter((c) => c.parent && !c.userData.done).length;
   if (living >= state.maxLive) return;
 
   const pool = CREATURES.filter((c) => {
@@ -493,14 +518,21 @@ function spawnCreature(prefId) {
     ? CREATURES.find((c) => c.id === prefId)
     : pool[Math.floor(Math.random() * pool.length)];
   const visual = creatureVisual(def.id);
-  visual.position.set(0, TABLE_Y + 0.12, TABLE_Z + 0.18);
+  const slot = freeSpawnPos();
+  visual.position.copy(slot);
   visual.userData = {
     def,
     heldBy: null,
     bob: Math.random() * Math.PI * 2,
-    spawnY: TABLE_Y + 0.12,
+    spawnY: slot.y,
+    home: slot.clone(),
+    walk: slot.clone(),
     returning: false,
     pop: 0.2,
+    ai: "idle",
+    aiUntil: 0,
+    age: 0,
+    fussed: false,
   };
   scene.add(visual);
   live.push(visual);
@@ -525,13 +557,14 @@ function nearestCreature(worldPos) {
 
 function biomeAt(worldPos) {
   let best = null;
-  let bestD = SNAP_RADIUS;
+  let bestD = SNAP_XZ;
   for (const b of biomes) {
     b.getWorldPosition(tmp);
-    const d = worldPos.distanceTo(tmp);
-    const extra = b.userData.id === "junk" ? 0.06 : 0;
-    if (d < bestD + extra) {
-      bestD = d;
+    const xz = Math.hypot(worldPos.x - tmp.x, worldPos.z - tmp.z);
+    const dy = worldPos.y - tmp.y;
+    const extra = b.userData.id === "junk" ? 0.1 : 0;
+    if (xz <= bestD + extra && dy >= SNAP_Y_MIN && dy <= SNAP_Y_MAX) {
+      bestD = xz;
       best = b;
     }
   }
@@ -543,6 +576,7 @@ function grab(creature, hand) {
   creature.userData.heldBy = hand;
   hand.userData.holding = creature;
   creature.userData.returning = false;
+  creature.userData.ai = "held";
   scene.attach(creature);
   if (hand === camera) {
     creature.scale.setScalar(1.08);
@@ -561,9 +595,16 @@ function release(hand) {
   scene.attach(creature);
   creature.scale.setScalar(1);
   creature.getWorldPosition(tmp);
-  const zone = biomeAt(tmp);
+  let zone = biomeAt(tmp);
+  if (!zone) {
+    hand.getWorldPosition(tmp2);
+    zone = biomeAt(tmp2);
+  }
   if (zone) resolveDrop(creature, zone);
-  else bounceHome(creature);
+  else {
+    say("Hold it over a bowl, then let go.", 2.4);
+    bounceHome(creature);
+  }
 }
 
 function pickLine(list) {
@@ -579,11 +620,7 @@ function resolveDrop(creature, zone) {
     state.score += pts;
     state.placed += 1;
     state.best = Math.max(state.best, state.combo);
-    if (state.placed % 5 === 0) {
-      state.wave += 1;
-      state.spawnGap = Math.max(1.7, state.spawnGap - 0.35);
-      if (state.wave >= 3) state.maxLive = 3;
-    }
+    if (state.placed % 5 === 0) state.wave += 1;
     say(pickLine(def.correct) + `  +${pts}`, 3);
     settleInBiome(creature, zone);
     ding(true);
@@ -598,21 +635,39 @@ function resolveDrop(creature, zone) {
 
 function settleInBiome(creature, zone) {
   creature.userData.heldBy = "done";
+  creature.userData.ai = "celebrate";
+  creature.userData.done = true;
   zone.attach(creature);
   creature.position.set((Math.random() - 0.5) * 0.08, 0.07, (Math.random() - 0.5) * 0.06);
   creature.scale.setScalar(0.72);
-  creature.userData.done = true;
+  state.awaitingSpawn = true;
+  state.nextSpawn = clock.elapsedTime + 1.35;
   setTimeout(() => {
     if (creature.parent) creature.removeFromParent();
     const i = live.indexOf(creature);
     if (i >= 0) live.splice(i, 1);
-  }, 2200);
+  }, 2400);
 }
 
 function bounceHome(creature) {
   creature.userData.returning = true;
+  creature.userData.ai = "return";
   creature.userData.heldBy = null;
+  creature.userData.home = freeSpawnPos();
+  creature.userData.walk = creature.userData.home.clone();
+  creature.userData.spawnY = creature.userData.home.y;
   scene.attach(creature);
+}
+
+function biomeGroup(id) {
+  return biomes.find((b) => b.userData.id === id);
+}
+
+function clampTable(pos) {
+  pos.x = Math.max(-0.46, Math.min(0.46, pos.x));
+  pos.z = Math.max(TABLE_Z + 0.08, Math.min(TABLE_Z + 0.3, pos.z));
+  pos.y = TABLE_Y + 0.12;
+  return pos;
 }
 
 function ding(good) {
@@ -716,25 +771,95 @@ function highlightBiomes() {
 function updateCreatures(dt, t) {
   hatch.scale.lerp(new THREE.Vector3(1, 1, 1), 0.1);
   for (const c of live) {
-    if (!c.parent || c.userData.done) continue;
-    if (c.userData.pop > 0) {
-      c.userData.pop -= dt;
-      const s = 1 + Math.sin((0.2 - c.userData.pop) * 18) * 0.08;
-      if (!c.userData.heldBy) c.scale.setScalar(s);
+    if (!c.parent) continue;
+    const data = c.userData;
+    data.bob += dt * 2.2;
+
+    if (data.done) {
+      c.rotation.y += dt * 3.2;
+      c.position.y = 0.07 + Math.sin(data.bob * 2) * 0.02;
+      continue;
     }
-    if (c.userData.heldBy && c.userData.heldBy !== "done") continue;
-    if (c.userData.returning) {
-      tmp.set(0, TABLE_Y + 0.12, TABLE_Z + 0.18);
-      c.position.lerp(tmp, 0.12);
+
+    if (data.pop > 0) {
+      data.pop -= dt;
+      const s = 1 + Math.sin((0.2 - data.pop) * 18) * 0.08;
+      if (!data.heldBy) c.scale.setScalar(s);
+    }
+
+    if (data.heldBy && data.heldBy !== "done") continue;
+
+    if (data.returning) {
+      tmp.copy(data.home || SPAWN_SLOTS[0]);
+      c.position.lerp(tmp, 0.14);
+      c.rotation.y += dt * 4;
       if (c.position.distanceTo(tmp) < 0.03) {
-        c.userData.returning = false;
+        data.returning = false;
+        data.ai = "idle";
+        data.aiUntil = t + 1.2;
         c.position.copy(tmp);
       }
       continue;
     }
-    c.userData.bob += dt * 2.2;
-    c.position.y = c.userData.spawnY + Math.sin(c.userData.bob) * 0.012;
-    c.rotation.y += dt * 0.6;
+
+    data.age += dt;
+    const id = data.def.id;
+    const speed = id === "crab" || id === "fox" || id === "fish" ? 0.16 : id === "bear" || id === "cactus" || id === "camel" ? 0.07 : 0.11;
+
+    if (data.age > 7 && !data.fussed) {
+      data.fussed = true;
+      data.ai = "fuss";
+      data.aiUntil = t + 2.5;
+      say(pickLine(TABLE_LINES.fuss), 2.6);
+    }
+
+    if (t > data.aiUntil) {
+      if (data.age > 8) data.ai = "seek";
+      else data.ai = Math.random() < 0.55 ? "wander" : "look";
+      if (data.ai === "wander") {
+        data.walk.set((Math.random() - 0.5) * 0.5, TABLE_Y + 0.12, TABLE_Z + 0.14 + Math.random() * 0.12);
+        clampTable(data.walk);
+      }
+      data.aiUntil = t + 1.6 + Math.random() * 1.4;
+    }
+
+    if (data.ai === "look" || data.ai === "seek" || data.ai === "fuss") {
+      const home = biomeGroup(data.def.biome);
+      if (home) {
+        home.getWorldPosition(tmp);
+        tmp.y = c.position.y;
+        const face = Math.atan2(tmp.x - c.position.x, tmp.z - c.position.z);
+        c.rotation.y += (face - c.rotation.y) * Math.min(1, dt * 3);
+        if (data.ai === "seek") {
+          tmp.y = TABLE_Y + 0.12;
+          const rim = c.position.distanceTo(tmp);
+          if (rim > 0.24) c.position.lerp(tmp, dt * 0.55);
+        }
+      }
+    }
+
+    if (data.ai === "wander") {
+      c.position.x += (data.walk.x - c.position.x) * dt * speed * 8;
+      c.position.z += (data.walk.z - c.position.z) * dt * speed * 8;
+      const face = Math.atan2(data.walk.x - c.position.x, data.walk.z - c.position.z);
+      c.rotation.y += (face - c.rotation.y) * Math.min(1, dt * 4);
+    }
+
+    if (data.ai === "fuss") {
+      c.rotation.z = Math.sin(t * 10) * 0.18;
+    } else {
+      c.rotation.z += (0 - c.rotation.z) * dt * 6;
+    }
+
+    if (id === "crab") c.position.x += Math.sin(t * 6) * dt * 0.04;
+    if (id === "fish") c.rotation.x = Math.sin(t * 8) * 0.15;
+    else c.rotation.x += (0 - c.rotation.x) * dt * 5;
+
+    const hop = data.ai === "fuss" ? 0.03 : 0.012;
+    c.position.y = (data.spawnY || TABLE_Y + 0.12) + Math.sin(data.bob) * hop;
+    clampTable(tmp.copy(c.position));
+    c.position.x = tmp.x;
+    c.position.z = tmp.z;
   }
 }
 
@@ -783,7 +908,8 @@ function startGame() {
   state.started = true;
   document.getElementById("hud").classList.add("hidden");
   say(pickLine(TABLE_LINES.intro), 4);
-  state.nextSpawn = clock.elapsedTime + 0.6;
+  state.awaitingSpawn = true;
+  state.nextSpawn = clock.elapsedTime + 0.7;
 }
 
 async function enterVR() {
@@ -883,10 +1009,11 @@ function tick() {
   const t = clock.elapsedTime;
 
   if (state.started) {
-    if (t > state.nextSpawn) {
+    const active = live.some((c) => c.parent && !c.userData.done);
+    if (state.awaitingSpawn && !active && t >= state.nextSpawn) {
       const forceJunk = state.placed > 0 && state.placed % 6 === 5;
       spawnCreature(forceJunk ? (Math.random() < 0.5 ? "sock" : "duck") : null);
-      state.nextSpawn = t + state.spawnGap;
+      state.awaitingSpawn = false;
     }
     if (t > state.lineUntil && Math.floor(t) % 11 === 0) {
       say(pickLine(TABLE_LINES.idle), 3);
