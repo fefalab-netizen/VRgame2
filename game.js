@@ -8,6 +8,9 @@ const SNAP_XZ = 0.28;
 const MAGNET_XZ = 0.26;
 const SNAP_Y_MIN = -0.7;
 const SNAP_Y_MAX = 1.0;
+const BIOME_CAP = 5;
+const RESIDENT_SCALE = 0.36;
+const RESIDENT_RADIUS = 0.1;
 
 const SPAWN_SLOTS = [
   new THREE.Vector3(-0.18, TABLE_Y + 0.12, TABLE_Z + 0.18),
@@ -141,6 +144,24 @@ const TABLE_LINES = {
     "It keeps looking at its real home.",
     "Someone is becoming a little dramatic.",
   ],
+};
+
+const FUNNY_SUB = {
+  penguin: "CEO of ice",
+  bear: "giant marshmallow",
+  seal: "flipper applause",
+  camel: "two-hump taxi",
+  cactus: "spiky roommate",
+  lizard: "professional sunbather",
+  owl: "night shift",
+  frog: "pond karaoke",
+  fox: "forest gossip",
+  fish: "requires soup",
+  crab: "sideways union",
+  turtle: "unhurried",
+  sock: "escaped laundry",
+  duck: "not a real fish",
+  banana: "not a mammal",
 };
 
 const state = {
@@ -472,6 +493,216 @@ function creatureVisual(id) {
   return g;
 }
 
+function drawDoodle(ctx, id) {
+  ctx.save();
+  ctx.translate(128, 116);
+  if (id === "penguin") {
+    ctx.fillStyle = "#22242b";
+    ctx.beginPath();
+    ctx.ellipse(0, 10, 36, 52, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#fff";
+    ctx.beginPath();
+    ctx.ellipse(0, 18, 22, 32, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#e07a2f";
+    ctx.fillRect(-8, -8, 16, 8);
+  } else if (id === "bear") {
+    ctx.fillStyle = "#f6f1e8";
+    ctx.beginPath();
+    ctx.arc(0, 8, 48, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(-32, -28, 14, 0, Math.PI * 2);
+    ctx.arc(32, -28, 14, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#222";
+    ctx.fillRect(-6, 10, 12, 8);
+  } else if (id === "seal") {
+    ctx.fillStyle = "#9aa4ad";
+    ctx.beginPath();
+    ctx.ellipse(0, 8, 58, 28, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(40, 0, 16, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#222";
+    ctx.beginPath();
+    ctx.arc(48, 2, 3, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (id === "camel") {
+    ctx.fillStyle = "#d7b07a";
+    ctx.fillRect(-40, 0, 70, 28);
+    ctx.beginPath();
+    ctx.arc(-10, -8, 16, 0, Math.PI * 2);
+    ctx.arc(16, -6, 16, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillRect(30, -20, 12, 30);
+  } else if (id === "cactus") {
+    ctx.fillStyle = "#3f9a4a";
+    ctx.fillRect(-10, -40, 20, 80);
+    ctx.fillRect(10, -10, 28, 12);
+    ctx.fillRect(-38, 8, 28, 12);
+    ctx.fillStyle = "#e7a0b8";
+    ctx.beginPath();
+    ctx.arc(0, -44, 8, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (id === "lizard") {
+    ctx.fillStyle = "#3aa87a";
+    ctx.beginPath();
+    ctx.ellipse(0, 8, 50, 16, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillRect(40, 0, 18, 12);
+    ctx.strokeStyle = "#2b6b38";
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.moveTo(-50, 8);
+    ctx.quadraticCurveTo(-70, 30, -40, 24);
+    ctx.stroke();
+  } else if (id === "owl") {
+    ctx.fillStyle = "#6a4330";
+    ctx.beginPath();
+    ctx.arc(0, 8, 44, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#f3e6c8";
+    ctx.beginPath();
+    ctx.arc(-14, 0, 14, 0, Math.PI * 2);
+    ctx.arc(14, 0, 14, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#222";
+    ctx.beginPath();
+    ctx.arc(-14, 0, 6, 0, Math.PI * 2);
+    ctx.arc(14, 0, 6, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (id === "frog") {
+    ctx.fillStyle = "#3f9a4a";
+    ctx.beginPath();
+    ctx.ellipse(0, 16, 46, 28, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(-20, -8, 14, 0, Math.PI * 2);
+    ctx.arc(20, -8, 14, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#fff";
+    ctx.beginPath();
+    ctx.arc(-20, -8, 8, 0, Math.PI * 2);
+    ctx.arc(20, -8, 8, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (id === "fox") {
+    ctx.fillStyle = "#e07a2f";
+    ctx.beginPath();
+    ctx.moveTo(0, 40);
+    ctx.lineTo(-40, -20);
+    ctx.lineTo(0, -8);
+    ctx.lineTo(40, -20);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = "#fff";
+    ctx.beginPath();
+    ctx.arc(0, 16, 12, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (id === "fish") {
+    ctx.fillStyle = "#e07a2f";
+    ctx.beginPath();
+    ctx.ellipse(4, 8, 42, 24, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#f0c44a";
+    ctx.beginPath();
+    ctx.moveTo(-40, 8);
+    ctx.lineTo(-68, -16);
+    ctx.lineTo(-68, 32);
+    ctx.closePath();
+    ctx.fill();
+  } else if (id === "crab") {
+    ctx.fillStyle = "#c45a3a";
+    ctx.beginPath();
+    ctx.ellipse(0, 8, 40, 22, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#c45a3a";
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.arc(-48, 0, 14, Math.PI * 0.2, Math.PI * 1.4);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(48, 0, 14, -Math.PI * 0.4, Math.PI * 0.8);
+    ctx.stroke();
+  } else if (id === "turtle") {
+    ctx.fillStyle = "#5a8f4a";
+    ctx.beginPath();
+    ctx.ellipse(0, 8, 48, 32, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#3aa87a";
+    ctx.beginPath();
+    ctx.arc(44, 8, 12, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (id === "sock") {
+    ctx.fillStyle = "#e7a0b8";
+    ctx.fillRect(-16, -40, 28, 70);
+    ctx.beginPath();
+    ctx.ellipse(16, 28, 28, 16, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(-16, -40, 28, 12);
+  } else if (id === "duck") {
+    ctx.fillStyle = "#f0c44a";
+    ctx.beginPath();
+    ctx.ellipse(-6, 16, 36, 22, 0, 0, Math.PI * 2);
+    ctx.arc(20, -8, 16, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#e07a2f";
+    ctx.fillRect(28, -12, 22, 10);
+  } else if (id === "banana") {
+    ctx.strokeStyle = "#e8c84a";
+    ctx.lineWidth = 22;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.arc(0, 8, 40, 0.3, 2.4);
+    ctx.stroke();
+    ctx.fillStyle = "#6a4330";
+    ctx.fillRect(-8, -40, 10, 16);
+  } else {
+    ctx.fillStyle = "#4e8a6c";
+    ctx.beginPath();
+    ctx.arc(0, 0, 36, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.fillStyle = "#222";
+  ctx.beginPath();
+  ctx.arc(-10, 0, 4, 0, Math.PI * 2);
+  ctx.arc(10, 0, 4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function makeFunnyCard(def) {
+  const c = document.createElement("canvas");
+  c.width = 256;
+  c.height = 320;
+  const ctx = c.getContext("2d");
+  ctx.fillStyle = "#f4efe4";
+  ctx.fillRect(0, 0, 256, 320);
+  ctx.fillStyle = "#fff8ee";
+  ctx.fillRect(14, 14, 228, 198);
+  ctx.strokeStyle = "#d7c4a2";
+  ctx.strokeRect(14, 14, 228, 198);
+  drawDoodle(ctx, def.id);
+  ctx.fillStyle = "#1b2a24";
+  ctx.font = "700 26px Trebuchet MS, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(def.title.toUpperCase(), 128, 246);
+  ctx.fillStyle = "#5a6b4a";
+  ctx.font = "600 16px Trebuchet MS, sans-serif";
+  ctx.fillText(FUNNY_SUB[def.id] || "Table's guest", 128, 274);
+  const tex = new THREE.CanvasTexture(c);
+  const mesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.15, 0.188),
+    new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false })
+  );
+  mesh.position.set(0, 0.17, 0.02);
+  mesh.userData.isCard = true;
+  return mesh;
+}
+
 function makeLabel(title, color) {
   const c = document.createElement("canvas");
   c.width = 256;
@@ -500,7 +731,7 @@ function makeBiome(id, title, x, colorMat, accentFn) {
   g.add(addShadowless(bowl));
   if (accentFn) accentFn(g);
   g.add(makeLabel(title, "#f4efe4"));
-  g.userData = { id, highlight: 0 };
+  g.userData = { id, highlight: 0, residents: [] };
   biomes.push(g);
   tableGroup.add(g);
   return g;
@@ -583,7 +814,7 @@ function buildTable() {
   bottom.position.y = -0.06;
   junk.add(addShadowless(basket), addShadowless(bottom), makeLabel("SOCKS", "#f4d35e"));
   junk.children[2].position.set(0, 0.1, 0.12);
-  junk.userData = { id: "junk", highlight: 0 };
+  junk.userData = { id: "junk", highlight: 0, residents: [] };
   biomes.push(junk);
   tableGroup.add(junk);
 
@@ -704,17 +935,20 @@ function spawnCreature(prefId) {
     age: 0,
     fussed: false,
   };
+  const card = makeFunnyCard(def);
+  visual.add(card);
+  visual.userData.card = card;
   scene.add(visual);
   live.push(visual);
   hatch.scale.set(1.15, 1, 1.15);
-  say(`${def.title} has entered the building.`, 2.2);
+  say(`${def.title} — ${FUNNY_SUB[def.id] || "new roommate"}.`, 2.4);
 }
 
 function nearestCreature(worldPos) {
   let best = null;
   let bestD = GRAB_RADIUS;
   for (const c of live) {
-    if (!c.parent || c.userData.heldBy) continue;
+    if (!c.parent || c.userData.heldBy || c.userData.resident || c.userData.done) continue;
     c.getWorldPosition(tmp);
     const d = tmp.distanceTo(worldPos);
     if (d < bestD) {
@@ -782,7 +1016,7 @@ function tryStickCorrect(creature, hand) {
 }
 
 function grab(creature, hand) {
-  if (!creature || creature.userData.heldBy) return;
+  if (!creature || creature.userData.heldBy || creature.userData.resident || creature.userData.done) return;
   creature.userData.heldBy = hand;
   hand.userData.holding = creature;
   creature.userData.returning = false;
@@ -846,20 +1080,31 @@ function resolveDrop(creature, zone) {
   paintScore();
 }
 
+function evictResident(creature) {
+  if (!creature) return;
+  if (creature.parent) creature.removeFromParent();
+  const i = live.indexOf(creature);
+  if (i >= 0) live.splice(i, 1);
+}
+
 function settleInBiome(creature, zone) {
+  if (!zone.userData.residents) zone.userData.residents = [];
+  while (zone.userData.residents.length >= BIOME_CAP) {
+    evictResident(zone.userData.residents.shift());
+  }
   creature.userData.heldBy = "done";
-  creature.userData.ai = "celebrate";
+  creature.userData.ai = "resident";
   creature.userData.done = true;
+  creature.userData.resident = true;
+  creature.userData.homeRadius = zone.userData.id === "junk" ? 0.11 : RESIDENT_RADIUS;
+  creature.userData.walk.set((Math.random() - 0.5) * 0.12, 0.05, (Math.random() - 0.5) * 0.1);
   zone.attach(creature);
-  creature.position.set((Math.random() - 0.5) * 0.08, 0.07, (Math.random() - 0.5) * 0.06);
-  creature.scale.setScalar(0.72);
+  creature.position.set((Math.random() - 0.5) * 0.1, 0.055, (Math.random() - 0.5) * 0.08);
+  creature.scale.setScalar(RESIDENT_SCALE);
+  if (creature.userData.card) creature.userData.card.visible = false;
+  zone.userData.residents.push(creature);
   state.awaitingSpawn = true;
-  state.nextSpawn = clock.elapsedTime + 1.35;
-  setTimeout(() => {
-    if (creature.parent) creature.removeFromParent();
-    const i = live.indexOf(creature);
-    if (i >= 0) live.splice(i, 1);
-  }, 2400);
+  state.nextSpawn = clock.elapsedTime + 1.15;
 }
 
 function bounceHome(creature) {
@@ -1048,6 +1293,29 @@ function updateCreatures(dt, t) {
     if (!c.parent) continue;
     const data = c.userData;
     data.bob += dt * 2.2;
+
+    if (data.card && data.card.visible && camera) {
+      camera.getWorldPosition(tmp);
+      data.card.lookAt(tmp);
+    }
+
+    if (data.resident) {
+      const capR = data.homeRadius || RESIDENT_RADIUS;
+      if (t > data.aiUntil) {
+        data.walk.set((Math.random() - 0.5) * capR * 1.6, 0.05, (Math.random() - 0.5) * capR * 1.4);
+        data.aiUntil = t + 1.4 + Math.random();
+      }
+      c.position.x += (data.walk.x - c.position.x) * dt * 1.4;
+      c.position.z += (data.walk.z - c.position.z) * dt * 1.4;
+      const dist = Math.hypot(c.position.x, c.position.z);
+      if (dist > capR) {
+        c.position.x *= capR / dist;
+        c.position.z *= capR / dist;
+      }
+      c.position.y = 0.05 + Math.sin(data.bob * 1.6) * 0.006;
+      c.rotation.y += dt * 0.9;
+      continue;
+    }
 
     if (data.done) {
       c.rotation.y += dt * 3.2;
