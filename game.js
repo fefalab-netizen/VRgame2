@@ -3,10 +3,11 @@ import { XRControllerModelFactory } from "three/addons/webxr/XRControllerModelFa
 
 const TABLE_Y = 0.92;
 const TABLE_Z = -0.72;
-const GRAB_RADIUS = 0.22;
-const SNAP_XZ = 0.3;
-const SNAP_Y_MIN = -0.4;
-const SNAP_Y_MAX = 0.65;
+const GRAB_RADIUS = 0.24;
+const SNAP_XZ = 0.4;
+const MAGNET_XZ = 0.38;
+const SNAP_Y_MIN = -0.7;
+const SNAP_Y_MAX = 1.0;
 
 const SPAWN_SLOTS = [
   new THREE.Vector3(-0.18, TABLE_Y + 0.12, TABLE_Z + 0.18),
@@ -56,12 +57,6 @@ const CREATURES = [
     title: "Frog",
     correct: ["Frog grabs a reed microphone.", "It is karaoke o'clock."],
     wrong: ["Frog puts on a rain hat and stares.", "No pond. No vibe."],
-  },
-  {
-    id: "fox",
-    biome: "forest",
-    title: "Fox",
-    correct: ["Fox vanishes into the ferns, dramatically.", "Forest gossips increase by one."],
   },
   {
     id: "fish",
@@ -126,6 +121,8 @@ const state = {
   awaitingSpawn: true,
   maxLive: 1,
   sessionMin: 0,
+  deck: [],
+  lastId: "",
 };
 
 let renderer, scene, camera, clock;
@@ -139,6 +136,7 @@ const live = [];
 const controllers = [];
 const tmp = new THREE.Vector3();
 const tmp2 = new THREE.Vector3();
+const tmp3 = new THREE.Vector3();
 
 const mats = {
   wood: new THREE.MeshStandardMaterial({ color: 0x8b5a3c, roughness: 0.7, metalness: 0.05 }),
@@ -339,7 +337,7 @@ function makeLabel(title, color) {
 function makeBiome(id, title, x, colorMat, accentFn) {
   const g = new THREE.Group();
   g.position.set(x, TABLE_Y + 0.02, TABLE_Z - 0.02);
-  const bowl = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.15, 0.05, 20), colorMat);
+  const bowl = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.18, 0.05, 20), colorMat);
   g.add(addShadowless(bowl));
   if (accentFn) accentFn(g);
   g.add(makeLabel(title, "#f4efe4"));
@@ -506,17 +504,30 @@ function freeSpawnPos() {
   return SPAWN_SLOTS[0].clone();
 }
 
+function refillDeck() {
+  const bag = CREATURES.slice();
+  for (let i = bag.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const swap = bag[i];
+    bag[i] = bag[j];
+    bag[j] = swap;
+  }
+  if (state.lastId && bag[0] && bag[0].id === state.lastId) bag.push(bag.shift());
+  state.deck = bag;
+}
+
+function nextCreatureDef() {
+  if (!state.deck.length) refillDeck();
+  const def = state.deck.shift();
+  state.lastId = def.id;
+  return def;
+}
+
 function spawnCreature(prefId) {
   const living = live.filter((c) => c.parent && !c.userData.done).length;
   if (living >= state.maxLive) return;
 
-  const pool = CREATURES.filter((c) => {
-    if (state.placed < 3 && c.junk) return false;
-    return true;
-  });
-  const def = prefId
-    ? CREATURES.find((c) => c.id === prefId)
-    : pool[Math.floor(Math.random() * pool.length)];
+  const def = prefId ? CREATURES.find((c) => c.id === prefId) : nextCreatureDef();
   const visual = creatureVisual(def.id);
   const slot = freeSpawnPos();
   visual.position.copy(slot);
@@ -555,20 +566,60 @@ function nearestCreature(worldPos) {
   return best;
 }
 
-function biomeAt(worldPos) {
+function nearBiome(biome, worldPos, radius) {
+  biome.getWorldPosition(tmp3);
+  const xz = Math.hypot(worldPos.x - tmp3.x, worldPos.z - tmp3.z);
+  const dy = worldPos.y - tmp3.y;
+  const extra = biome.userData.id === "junk" ? 0.12 : 0;
+  return xz <= radius + extra && dy >= SNAP_Y_MIN && dy <= SNAP_Y_MAX;
+}
+
+function biomeAt(worldPos, radius = SNAP_XZ) {
   let best = null;
-  let bestD = SNAP_XZ;
+  let bestD = radius;
   for (const b of biomes) {
     b.getWorldPosition(tmp);
     const xz = Math.hypot(worldPos.x - tmp.x, worldPos.z - tmp.z);
     const dy = worldPos.y - tmp.y;
-    const extra = b.userData.id === "junk" ? 0.1 : 0;
+    const extra = b.userData.id === "junk" ? 0.12 : 0;
     if (xz <= bestD + extra && dy >= SNAP_Y_MIN && dy <= SNAP_Y_MAX) {
       bestD = xz;
       best = b;
     }
   }
   return best;
+}
+
+function sampleHoldPoints(creature, hand) {
+  const points = [];
+  creature.getWorldPosition(tmp);
+  points.push(tmp.clone());
+  if (hand && hand !== camera) {
+    hand.getWorldPosition(tmp2);
+    points.push(tmp2.clone());
+    points.push(new THREE.Vector3(tmp2.x, tmp2.y - 0.18, tmp2.z));
+    points.push(new THREE.Vector3(tmp2.x, TABLE_Y + 0.08, tmp2.z));
+    const grip = hand.userData.grip;
+    if (grip) {
+      grip.getWorldPosition(tmp2);
+      points.push(tmp2.clone());
+    }
+  }
+  return points;
+}
+
+function tryStickCorrect(creature, hand) {
+  const home = biomeGroup(creature.userData.def.biome);
+  if (!home || creature.userData.done) return false;
+  const points = sampleHoldPoints(creature, hand);
+  for (const p of points) {
+    if (nearBiome(home, p, MAGNET_XZ)) {
+      if (hand && hand.userData.holding === creature) hand.userData.holding = null;
+      resolveDrop(creature, home);
+      return true;
+    }
+  }
+  return false;
 }
 
 function grab(creature, hand) {
@@ -582,8 +633,9 @@ function grab(creature, hand) {
     creature.scale.setScalar(1.08);
     return;
   }
-  hand.attach(creature);
-  creature.position.set(0, -0.02, -0.05);
+  const grip = hand.userData.grip || hand;
+  grip.attach(creature);
+  creature.position.set(0, 0, -0.04);
   creature.scale.setScalar(1.08);
 }
 
@@ -594,15 +646,16 @@ function release(hand) {
   creature.userData.heldBy = null;
   scene.attach(creature);
   creature.scale.setScalar(1);
-  creature.getWorldPosition(tmp);
-  let zone = biomeAt(tmp);
-  if (!zone) {
-    hand.getWorldPosition(tmp2);
-    zone = biomeAt(tmp2);
+  if (tryStickCorrect(creature, hand)) return;
+  const points = sampleHoldPoints(creature, hand);
+  let zone = null;
+  for (const p of points) {
+    zone = biomeAt(p, SNAP_XZ);
+    if (zone) break;
   }
   if (zone) resolveDrop(creature, zone);
   else {
-    say("Hold it over a bowl, then let go.", 2.4);
+    say("Closer — hover over its real bowl.", 2.4);
     bounceHome(creature);
   }
 }
@@ -612,6 +665,7 @@ function pickLine(list) {
 }
 
 function resolveDrop(creature, zone) {
+  if (!creature || creature.userData.done || !zone) return;
   const def = creature.userData.def;
   const ok = zone.userData.id === def.biome;
   if (ok) {
@@ -698,6 +752,7 @@ function setupControllers() {
 
     const grip = renderer.xr.getControllerGrip(i);
     grip.add(factory.createControllerModel(grip));
+    controller.userData.grip = grip;
     scene.add(grip);
 
     const marker = new THREE.Mesh(
@@ -759,9 +814,11 @@ function highlightBiomes() {
     if (holding) {
       const held = holders.find((c) => c.userData.holding)?.userData.holding;
       if (held) {
+        const home = biomeGroup(held.userData.def.biome);
         held.getWorldPosition(tmp);
-        const near = biomeAt(tmp) === b;
-        target = near ? 1.12 : 0.96;
+        const overCorrect = home === b && nearBiome(b, tmp, MAGNET_XZ + 0.08);
+        const near = biomeAt(tmp, SNAP_XZ) === b;
+        target = overCorrect ? 1.16 : near ? 1.08 : 0.96;
       }
     }
     b.scale.lerp(new THREE.Vector3(target, target, target), 0.15);
@@ -910,6 +967,7 @@ function startGame() {
   say(pickLine(TABLE_LINES.intro), 4);
   state.awaitingSpawn = true;
   state.nextSpawn = clock.elapsedTime + 0.7;
+  refillDeck();
 }
 
 async function enterVR() {
@@ -1011,8 +1069,7 @@ function tick() {
   if (state.started) {
     const active = live.some((c) => c.parent && !c.userData.done);
     if (state.awaitingSpawn && !active && t >= state.nextSpawn) {
-      const forceJunk = state.placed > 0 && state.placed % 6 === 5;
-      spawnCreature(forceJunk ? (Math.random() < 0.5 ? "sock" : "duck") : null);
+      spawnCreature();
       state.awaitingSpawn = false;
     }
     if (t > state.lineUntil && Math.floor(t) % 11 === 0) {
@@ -1022,6 +1079,10 @@ function tick() {
       say("Table recommends a stretch. Brains also need biomes.", 5);
     }
     updateHands();
+    for (const hand of controllers.concat(camera)) {
+      const held = hand.userData.holding;
+      if (held && !held.userData.done) tryStickCorrect(held, hand);
+    }
     updateCreatures(dt, t);
     highlightBiomes();
   }
