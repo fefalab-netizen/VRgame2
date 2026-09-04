@@ -4,8 +4,8 @@ import { XRControllerModelFactory } from "three/addons/webxr/XRControllerModelFa
 const TABLE_Y = 0.92;
 const TABLE_Z = -0.72;
 const GRAB_RADIUS = 0.24;
-const SNAP_XZ = 0.4;
-const MAGNET_XZ = 0.38;
+const SNAP_XZ = 0.28;
+const MAGNET_XZ = 0.26;
 const SNAP_Y_MIN = -0.7;
 const SNAP_Y_MAX = 1.0;
 
@@ -724,9 +724,67 @@ function clampTable(pos) {
   return pos;
 }
 
+function audioCtx() {
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return null;
+  if (!ding.ctx) ding.ctx = new AC();
+  if (ding.ctx.state === "suspended") ding.ctx.resume();
+  return ding.ctx;
+}
+
+function startTune() {
+  if (startTune.on) return;
+  const ctx = audioCtx();
+  if (!ctx) return;
+  startTune.on = true;
+
+  const master = ctx.createGain();
+  master.gain.value = 0.035;
+  master.connect(ctx.destination);
+
+  const pad = ctx.createOscillator();
+  pad.type = "sine";
+  pad.frequency.value = 196;
+  const padGain = ctx.createGain();
+  padGain.gain.value = 0.12;
+  pad.connect(padGain);
+  padGain.connect(master);
+  pad.start();
+
+  const scale = [392.0, 440.0, 523.25, 587.33, 659.25, 783.99];
+  const melody = [0, 2, 4, 2, 3, 2, 0, 2, 4, 5, 4, 2, 1, 2, 0, 2];
+  let step = 0;
+
+  function pluck(freq, when, life) {
+    const o = ctx.createOscillator();
+    o.type = "triangle";
+    o.frequency.value = freq;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, when);
+    g.gain.exponentialRampToValueAtTime(0.28, when + 0.025);
+    g.gain.exponentialRampToValueAtTime(0.0001, when + life);
+    o.connect(g);
+    g.connect(master);
+    o.start(when);
+    o.stop(when + life + 0.02);
+  }
+
+  function bar() {
+    if (!startTune.on) return;
+    const now = ctx.currentTime;
+    const note = scale[melody[step % melody.length]];
+    pluck(note, now, 0.62);
+    if (step % 8 === 0) pluck(246.94, now, 0.95);
+    if (step % 16 === 8) pluck(329.63, now + 0.2, 0.5);
+    step += 1;
+    startTune.timer = window.setTimeout(bar, 430);
+  }
+  bar();
+}
+
 function ding(good) {
-  const ctx = ding.ctx || (ding.ctx = new (window.AudioContext || window.webkitAudioContext)());
-  if (ctx.state === "suspended") ctx.resume();
+  const ctx = audioCtx();
+  if (!ctx) return;
   const o = ctx.createOscillator();
   const g = ctx.createGain();
   o.type = "sine";
@@ -965,6 +1023,7 @@ function startGame() {
   state.started = true;
   document.getElementById("hud").classList.add("hidden");
   say(pickLine(TABLE_LINES.intro), 4);
+  startTune();
   state.awaitingSpawn = true;
   state.nextSpawn = clock.elapsedTime + 0.7;
   refillDeck();
@@ -1079,10 +1138,6 @@ function tick() {
       say("Table recommends a stretch. Brains also need biomes.", 5);
     }
     updateHands();
-    for (const hand of controllers.concat(camera)) {
-      const held = hand.userData.holding;
-      if (held && !held.userData.done) tryStickCorrect(held, hand);
-    }
     updateCreatures(dt, t);
     highlightBiomes();
   }
