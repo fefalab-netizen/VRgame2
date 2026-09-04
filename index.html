@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Living Workbench</title>
+  <meta name="description" content="An endless WebXR sorting game for Quest 2 and up. Put each creature in its home." />
+  <style>
+    :root {
+      --ink: #1b2a24;
+      --moss: #2f6b4f;
+      --sun: #f4d35e;
+      --paper: #f4efe4;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: #0e1a16;
+      color: var(--paper);
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      overflow: hidden;
+    }
+    #hud {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+      background:
+        radial-gradient(ellipse at 50% 20%, #3d7a5c 0%, transparent 50%),
+        linear-gradient(180deg, #163227 0%, #0e1a16 70%);
+      z-index: 5;
+      transition: opacity 0.4s ease, visibility 0.4s ease;
+    }
+    #hud.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    h1 {
+      font-size: clamp(2rem, 6vw, 3.4rem);
+      margin: 0 0 8px;
+      letter-spacing: 0.02em;
+    }
+    .tag {
+      color: var(--sun);
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+    p { max-width: 34rem; line-height: 1.45; margin: 0 0 14px; }
+    .homes {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin: 8px 0 22px;
+    }
+    .homes span {
+      background: #1d3a30;
+      border: 2px solid #4e8a6c;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 0.9rem;
+    }
+    button {
+      appearance: none;
+      border: 0;
+      background: var(--sun);
+      color: var(--ink);
+      font-weight: 800;
+      font-size: 1.15rem;
+      padding: 14px 28px;
+      border-radius: 999px;
+      cursor: pointer;
+    }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .hint { font-size: 0.85rem; opacity: 0.8; margin-top: 14px; }
+    canvas { display: block; width: 100%; height: 100%; }
+    #vr-mount {
+      position: fixed;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 6;
+    }
+    #vr-mount button {
+      background: #f4d35e !important;
+      color: #1b2a24 !important;
+      border-radius: 999px !important;
+      font-weight: 800 !important;
+    }
+  </style>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="hud">
+    <h1>Living Workbench</h1>
+    <div class="tag">Table is confused. You are not.</div>
+    <p>Creatures pop out of the hatch. Pick them up and put them in the right home. Wrong home? They will complain. A sock is not a penguin.</p>
+    <div class="homes">
+      <span>Desert</span><span>Forest</span><span>Ocean</span><span>Arctic</span><span>Sock drawer</span>
+    </div>
+    <button id="start-btn" type="button">Start on this screen</button>
+    <p class="hint">On a Quest, tap Enter VR after the table appears. Grip or trigger to grab. Pinch works if hand tracking is on. Stationary play. About 10–15 minutes is plenty.</p>
+  </div>
+  <div id="vr-mount"></div>
+  <script type="module" src="./game.js"></script>
+</body>
+</html>
